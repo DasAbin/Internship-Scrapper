@@ -1,0 +1,8 @@
+httpx
+beautifulsoup4
+playwright
+feedparser
+sentence-transformers
+psycopg2-binary
+python-dotenv
+pdfplumber
