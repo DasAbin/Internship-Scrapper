@@ -25,5 +25,4 @@ jobs:
       - name: Run scrapers
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PYTHONPATH: ${{ github.workspace }}
-        run: python scrapers/run.py
+        run: python -m scrapers.run
