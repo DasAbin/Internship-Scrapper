@@ -6,7 +6,7 @@ from scrapers.base import Spider, Listing
 
 class MLHSpider(Spider):
     def fetch(self) -> List[dict]:
-        response = httpx.get("https://mlh.io/seasons/2025/events")
+        response = httpx.get("https://mlh.io/seasons/2025/events", follow_redirects=True)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
         
