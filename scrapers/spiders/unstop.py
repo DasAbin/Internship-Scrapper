@@ -1,5 +1,4 @@
-import httpx
-from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 from typing import List
 from datetime import datetime
 from scrapers.base import Spider, Listing
@@ -7,38 +6,47 @@ from scrapers.base import Spider, Listing
 class UnstopSpider(Spider):
     def fetch(self) -> List[dict]:
         events = []
-        headers = {"User-Agent": "Mozilla/5.0"}
+        seen_hrefs = set()
         
-        for page in range(1, 6):
-            url = f"https://unstop.com/hackathons?per_page=20&page={page}"
-            try:
-                response = httpx.get(url, headers=headers, timeout=10.0)
-                if response.status_code != 200:
-                    print(f"Failed to fetch Unstop page {page}: {response.status_code}")
-                    continue
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(user_agent="Mozilla/5.0")
+            page = context.new_page()
+            
+            for pg in range(1, 4):
+                url = f"https://unstop.com/hackathons?per_page=20&page={pg}"
+                try:
+                    page.goto(url, wait_until="networkidle", timeout=30000)
+                    page.wait_for_timeout(2000)
                     
-                soup = BeautifulSoup(response.text, "html.parser")
-                cards = soup.select("div.listing-card")
-                if not cards:
-                    cards = soup.select("a[href*='/hackathons/']")
+                    cards = page.query_selector_all("a[href*='/hackathons/']")
+                    for card in cards:
+                        try:
+                            href = card.get_attribute("href")
+                            if not href or href in seen_hrefs:
+                                continue
+                            seen_hrefs.add(href)
+                            
+                            full_url = href if href.startswith("http") else f"https://unstop.com{href}"
+                            
+                            title_el = card.query_selector("h2, h3, .title, strong")
+                            title = title_el.inner_text().strip() if title_el else "Unstop Hackathon"
+                            
+                            org_el = card.query_selector(".org-name, .company, span.truncate")
+                            org = org_el.inner_text().strip() if org_el else "Unstop"
+                            
+                            events.append({
+                                "title": title,
+                                "url": full_url,
+                                "org": org,
+                            })
+                        except Exception:
+                            continue
+                except Exception as e:
+                    print(f"Error on Unstop page {pg}: {e}")
                     
-                for card in cards:
-                    href = card.get("href") if card.name == "a" else card.select_one("a").get("href") if card.select_one("a") else None
-                    if not href:
-                        continue
-                        
-                    full_url = href if href.startswith("http") else f"https://unstop.com{href}"
-                    
-                    title_el = card.select_one("h2, .title, .content h3, h3")
-                    org_el = card.select_one(".org, .organization")
-
-                    events.append({
-                        "title": title_el.text.strip() if title_el else "Unstop Hackathon",
-                        "url": full_url,
-                        "org": org_el.text.strip() if org_el else "Unstop",
-                    })
-            except Exception as e:
-                print(f"Error fetching Unstop page {page}: {e}")
+            browser.close()
+            
         return events
 
     def normalize(self, raw: dict) -> Listing:

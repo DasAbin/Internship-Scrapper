@@ -6,37 +6,56 @@ from scrapers.base import Spider, Listing
 
 class MLHSpider(Spider):
     def fetch(self) -> List[dict]:
-        response = httpx.get("https://mlh.io/seasons/2025/events", follow_redirects=True)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
+        urls = [
+            "https://mlh.io/seasons/2026/events",
+            "https://mlh.io/seasons/2025/events"
+        ]
+        headers = {"User-Agent": "Mozilla/5.0"}
         
         events = []
-        for card in soup.select("div.event-wrapper"):
-            title_el = card.select_one("h3.event-name")
-            date_el = card.select_one("p.event-date")
-            location_inner = card.select_one("div.event-location span[itemprop='locality']")
-            state_inner = card.select_one("div.event-location span[itemprop='region']")
-            link_el = card.select_one("a.event-link")
-            
-            loc = "Remote"
-            if location_inner:
-                loc = location_inner.text.strip()
-                if state_inner:
-                    loc += f", {state_inner.text.strip()}"
-
-            events.append({
-                "title": title_el.text.strip() if title_el else "",
-                "date": date_el.text.strip() if date_el else "",
-                "location": loc,
-                "url": link_el["href"] if link_el and "href" in link_el.attrs else ""
-            })
+        for url in urls:
+            try:
+                response = httpx.get(url, headers=headers, follow_redirects=True, timeout=15)
+                if response.status_code != 200:
+                    continue
+                soup = BeautifulSoup(response.text, "html.parser")
+                
+                cards = soup.select("div.event-wrapper")
+                if not cards:
+                    cards = soup.select("div.event")
+                if not cards:
+                    cards = soup.select("a.event-link")
+                    
+                for card in cards:
+                    try:
+                        title_el = card.select_one("h3, h2, .event-name")
+                        location_el = card.select_one(".event-location, .location")
+                        date_el = card.select_one("p.event-date, .event-date")
+                        
+                        link_el = card if card.name == "a" else card.select_one("a")
+                        if not link_el or "href" not in link_el.attrs:
+                            continue
+                            
+                        href = link_el["href"]
+                        full_url = href if href.startswith("http") else f"https://mlh.io{href}"
+                        
+                        events.append({
+                            "title": title_el.text.strip() if title_el else "",
+                            "date": date_el.text.strip() if date_el else "",
+                            "location": location_el.text.strip() if location_el else "Unknown",
+                            "url": full_url
+                        })
+                    except Exception:
+                        continue
+            except Exception as e:
+                print(f"Error fetching MLH from {url}: {e}")
+                
         return events
 
     def normalize(self, raw: dict) -> Listing:
         location = raw.get("location", "Unknown")
         remote = "Digital" in location or "Remote" in location or location == "Unknown"
         
-        # Basic deadline mapping omitted to prevent parser errors on weird formats
         deadline = None
         
         return Listing(

@@ -6,8 +6,21 @@ from scrapers.base import Spider, Listing
 
 class DevpostSpider(Spider):
     def fetch(self) -> List[dict]:
-        feed = feedparser.parse("https://devpost.com/hackathons.rss")
-        return feed.entries
+        urls = [
+            "https://devpost.com/hackathons.rss?challenge_type=all&status=open",
+            "https://devpost.com/hackathons.rss?challenge_type=online&status=open"
+        ]
+        all_entries = []
+        seen_links = set()
+        
+        for url in urls:
+            feed = feedparser.parse(url)
+            for entry in feed.entries:
+                link = entry.get("link", "")
+                if link not in seen_links:
+                    seen_links.add(link)
+                    all_entries.append(entry)
+        return all_entries
 
     def normalize(self, raw: dict) -> Listing:
         title = raw.get("title", "")
@@ -28,7 +41,7 @@ class DevpostSpider(Spider):
         except Exception:
             pass
 
-        description = raw.get("description", "")
+        description = raw.get("description") or raw.get("summary", "")
         org = raw.get("author", "Devpost")
         
         return Listing(
@@ -38,7 +51,7 @@ class DevpostSpider(Spider):
             title=title,
             org=org,
             url=url,
-            description=description[:1000], # Trucate just in case
+            description=description[:1000] if description else "",
             tags=tags,
             location="Remote",
             remote=True,
