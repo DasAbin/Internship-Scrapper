@@ -1,63 +1,60 @@
-import feedparser
+import httpx
 from typing import List
 from datetime import datetime
-from email.utils import parsedate_to_datetime
 from scrapers.base import Spider, Listing
 
 class DevpostSpider(Spider):
     def fetch(self) -> List[dict]:
         urls = [
-            "https://devpost.com/hackathons.rss?challenge_type=all&status=open",
-            "https://devpost.com/hackathons.rss?challenge_type=online&status=open"
+            "https://devpost.com/api/hackathons?challenge_type=all&status=open&page=1",
+            "https://devpost.com/api/hackathons?challenge_type=all&status=open&page=2"
         ]
         all_entries = []
-        seen_links = set()
+        headers = {
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0"
+        }
         
         for url in urls:
-            feed = feedparser.parse(url)
-            for entry in feed.entries:
-                link = entry.get("link", "")
-                if link not in seen_links:
-                    seen_links.add(link)
-                    all_entries.append(entry)
+            try:
+                response = httpx.get(url, headers=headers, follow_redirects=True, timeout=15)
+                if response.status_code == 200:
+                    data = response.json()
+                    hackathons = data.get("hackathons", [])
+                    all_entries.extend(hackathons)
+                else:
+                    print(f"[Devpost] API request failed with status {response.status_code} for {url}")
+            except Exception as e:
+                print(f"[Devpost] API request failed: {e}")
+                
         return all_entries
 
     def normalize(self, raw: dict) -> Listing:
         title = raw.get("title", "")
-        url = raw.get("link", "")
+        url = raw.get("url", "")
         
-        raw_tags = raw.get("tags", [])
-        tags = [t.term for t in raw_tags if 'term' in t]
+        themes = raw.get("themes", [])
+        tags = [t.get("name", "") if isinstance(t, dict) else str(t) for t in themes]
         
-        # Devpost RSS parser
-        deadline = None
+        displayed_location = raw.get("displayed_location", {})
+        location = displayed_location.get("location", "Unknown") if isinstance(displayed_location, dict) else "Unknown"
         
-        posted_at = datetime.utcnow()
-        try:
-            if "published" in raw and raw["published"]:
-                dt = parsedate_to_datetime(raw["published"])
-                if dt:
-                    posted_at = dt.replace(tzinfo=None)
-        except Exception:
-            pass
-
-        description = raw.get("description") or raw.get("summary", "")
-        org = raw.get("author", "Devpost")
+        prize_pool = raw.get("prize_amount", None)
         
         return Listing(
             id=self.generate_id(url),
             source="devpost",
             type="hackathon",
             title=title,
-            org=org,
+            org="Devpost",
             url=url,
-            description=description[:1000] if description else "",
+            description="",
             tags=tags,
-            location="Remote",
+            location=location,
             remote=True,
             stipend_min=None,
             stipend_max=None,
-            prize_pool=None, 
-            deadline=deadline,
-            posted_at=posted_at
+            prize_pool=prize_pool,
+            deadline=None,
+            posted_at=datetime.utcnow()
         )

@@ -3,6 +3,7 @@ from scrapers.spiders.devpost import DevpostSpider
 from scrapers.spiders.mlh import MLHSpider
 from scrapers.spiders.unstop import UnstopSpider
 from scrapers.spiders.internshala import InternshalaSpider
+from scrapers.spiders.devfolio import DevfolioSpider
 
 def main():
     start_time = time.time()
@@ -11,7 +12,8 @@ def main():
         DevpostSpider(),
         MLHSpider(),
         UnstopSpider(),
-        InternshalaSpider()
+        InternshalaSpider(),
+        DevfolioSpider()
     ]
     
     print("Starting InternMatch Scrapers...")
