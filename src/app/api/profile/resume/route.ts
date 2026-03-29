@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 import { groq } from '@/lib/groq';
-import pdfParse from 'pdf-parse';
+import * as pdfParse from 'pdf-parse';
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +20,8 @@ export async function POST(req: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    const pdfData = await pdfParse(buffer);
+    // @ts-ignore
+    const pdfData = await (pdfParse.default ? pdfParse.default(buffer) : pdfParse(buffer));
     const extractedText = pdfData.text;
 
     const systemPrompt = `Extract a structured profile from this resume. Return only valid JSON with keys:

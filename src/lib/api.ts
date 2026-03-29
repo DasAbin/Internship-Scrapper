@@ -81,11 +81,11 @@ export async function getListings(params: {
   if (params.filters) {
     searchParams.set("filters", JSON.stringify(params.filters));
   }
-  return apiRequest<ListingsResponse>(`/listings?${searchParams.toString()}`);
+  return apiRequest<ListingsResponse>(`/api/listings?${searchParams.toString()}`);
 }
 
 export async function getListingById(id: string): Promise<Listing> {
-  return apiRequest<Listing>(`/listings/${id}`);
+  return apiRequest<Listing>(`/api/listings/${id}`);
 }
 
 // ==================== Profile API ====================
@@ -97,7 +97,7 @@ export async function uploadResume(
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_URL}/profile/resume`, {
+  const response = await fetch(`${API_URL}/api/profile/resume`, {
     method: "POST",
     headers,
     body: formData,
@@ -118,7 +118,7 @@ export async function uploadLinkedIn(file: File): Promise<{ success: boolean }> 
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_URL}/profile/linkedin`, {
+  const response = await fetch(`${API_URL}/api/profile/linkedin`, {
     method: "POST",
     headers,
     body: formData,
@@ -132,21 +132,21 @@ export async function uploadLinkedIn(file: File): Promise<{ success: boolean }> 
 }
 
 export async function submitGithub(username: string): Promise<{ success: boolean }> {
-  return apiRequest<{ success: boolean }>("/profile/github", {
+  return apiRequest<{ success: boolean }>("/api/profile/github", {
     method: "POST",
     body: JSON.stringify({ username }),
   });
 }
 
 export async function getProfile(userId: string): Promise<UserProfile> {
-  return apiRequest<UserProfile>(`/profile/${userId}`);
+  return apiRequest<UserProfile>(`/api/profile/${userId}`);
 }
 
 export async function updateProfile(
   userId: string,
   data: Partial<UserProfile>
 ): Promise<UserProfile> {
-  return apiRequest<UserProfile>(`/profile/${userId}`, {
+  return apiRequest<UserProfile>(`/api/profile/${userId}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
@@ -157,7 +157,7 @@ export async function updateProfile(
 export async function createInteraction(
   payload: InteractionPayload
 ): Promise<{ success: boolean }> {
-  return apiRequest<{ success: boolean }>("/interactions", {
+  return apiRequest<{ success: boolean }>("/api/interactions", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -166,7 +166,7 @@ export async function createInteraction(
 export async function getSavedListings(
   userId: string
 ): Promise<SavedListing[]> {
-  return apiRequest<SavedListing[]>(`/saved/${userId}`);
+  return apiRequest<SavedListing[]>(`/api/saved/${userId}`);
 }
 
 export async function updateSavedStatus(
@@ -174,7 +174,7 @@ export async function updateSavedStatus(
   listingId: string,
   status: StatusType
 ): Promise<{ success: boolean }> {
-  return apiRequest<{ success: boolean }>(`/saved/${userId}`, {
+  return apiRequest<{ success: boolean }>(`/api/saved/${userId}`, {
     method: "PUT",
     body: JSON.stringify({ listing_id: listingId, status }),
   });
