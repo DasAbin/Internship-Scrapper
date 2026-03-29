@@ -107,8 +107,8 @@ export async function GET(req: Request) {
     const dataRes = await pool.query(dataQuery, queryParams);
 
     return NextResponse.json({
-      listings: dataRes.rows,
-      total,
+      listings: dataRes?.rows ?? [],
+      total: total || 0,
       page
     }, { status: 200 });
 

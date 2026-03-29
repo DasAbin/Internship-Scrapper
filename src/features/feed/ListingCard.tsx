@@ -83,7 +83,7 @@ export function ListingCard({
           <TooltipContent side="left" className="max-w-[200px]">
             <p className="font-medium mb-1">Match Reasons:</p>
             <ul className="text-xs space-y-0.5">
-              {(listing.matchReasons || ["Skills match", "Domain alignment", "Location preference"]).map(
+              {(listing.matchReasons ?? ["Skills match", "Domain alignment", "Location preference"]).map(
                 (reason, i) => (
                   <li key={i} className="flex items-center gap-1">
                     <span className="text-violet-400">•</span> {reason}
@@ -97,7 +97,7 @@ export function ListingCard({
 
       {/* Skill Tags */}
       <div className="flex flex-wrap gap-1.5 mb-3">
-        {listing.skillsRequired.slice(0, 4).map((skill) => (
+        {(listing.skillsRequired ?? []).slice(0, 4).map((skill) => (
           <span
             key={skill}
             className="px-2 py-0.5 rounded-md text-xs font-medium bg-violet-500/10 text-violet-300 border border-violet-500/20"
@@ -105,9 +105,9 @@ export function ListingCard({
             {skill}
           </span>
         ))}
-        {listing.skillsRequired.length > 4 && (
+        {(listing.skillsRequired ?? []).length > 4 && (
           <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
-            +{listing.skillsRequired.length - 4}
+            +{(listing.skillsRequired ?? []).length - 4}
           </span>
         )}
       </div>

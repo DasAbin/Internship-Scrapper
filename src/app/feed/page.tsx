@@ -88,7 +88,8 @@ function FeedContent() {
 
   const handleApply = useCallback(
     (listingId: string) => {
-      const listing = data?.listings.find((l) => l.id === listingId);
+      const listings = data?.listings ?? [];
+      const listing = listings.find((l) => l.id === listingId);
       if (listing?.applyUrl) {
         window.open(listing.applyUrl, "_blank");
       }
@@ -207,7 +208,7 @@ function FeedContent() {
             <div className="flex-1 min-w-0">
               <TabsContent value="internship" className="mt-0">
                 <ListingsGrid
-                  listings={data?.listings || []}
+                  listings={data?.listings ?? []}
                   isLoading={isLoading}
                   isError={isError}
                   onSave={handleSave}
@@ -219,7 +220,7 @@ function FeedContent() {
               </TabsContent>
               <TabsContent value="hackathon" className="mt-0">
                 <ListingsGrid
-                  listings={data?.listings || []}
+                  listings={data?.listings ?? []}
                   isLoading={isLoading}
                   isError={isError}
                   onSave={handleSave}
