@@ -10,7 +10,8 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { userId, listingId, action } = body;
+    const { listingId, action } = body;
+    const userId = body.userId || decodedToken.uid;
 
     if (!userId || !listingId || !action) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       INSERT INTO user_listings (user_id, listing_id, status)
       VALUES ($1, $2, $3)
       ON CONFLICT (user_id, listing_id) 
-      DO UPDATE SET status = EXCLUDED.status, updated_at = NOW()
+      DO UPDATE SET status = EXCLUDED.status
     `, [userId, listingId, action]);
 
     return NextResponse.json({ success: true }, { status: 200 });

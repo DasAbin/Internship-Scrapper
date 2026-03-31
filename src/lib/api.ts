@@ -155,11 +155,13 @@ export async function updateProfile(
 // ==================== Interactions API ====================
 
 export async function createInteraction(
-  payload: InteractionPayload
+  userId: string,
+  listingId: string,
+  action: string
 ): Promise<{ success: boolean }> {
   return apiRequest<{ success: boolean }>("/api/interactions", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ userId, listingId, action }),
   });
 }
 
